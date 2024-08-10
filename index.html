@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Desk</title>
+</head>
+<body>
+    <h1>Virtual Desk</h1>
+    <button id="joinQueueBtn">Join Queue</button>
+    <p id="queueStatus">Waiting to join...</p>
+    <div id="chatArea" style="display: none;">
+        <h2>You are now chatting with the admin</h2>
+        <input type="text" id="message" placeholder="Type your message...">
+        <button id="sendMessageBtn">Send</button>
+        <div id="chatMessages"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.getElementById('joinQueueBtn').addEventListener('click', () => {
+            socket.emit('joinQueue');
+        });
+
+        document.getElementById('sendMessageBtn').addEventListener('click', () => {
+            const message = document.getElementById('message').value;
+            socket.emit('userMessage', message);
+            document.getElementById('message').value = '';
+        });
+
+        socket.on('queuePosition', (position) => {
+            document.getElementById('queueStatus').innerText = `You are in position ${position} in the queue.`;
+        });
+
+        socket.on('startChat', () => {
+            document.getElementById('queueStatus').innerText = 'It’s your turn!';
+            document.getElementById('chatArea').style.display = 'block';
+        });
+
+        socket.on('receiveMessage', (data) => {
+    const chatMessages = document.getElementById('chatMessages');
+    
+    // Show message only if it's from admin or the user's own message
+    if (data.sender === 'Admin' || data.sender === `User ${socket.id}`) {
+        const newMessage = document.createElement('p');
+        newMessage.textContent = `${data.sender}: ${data.message}`;
+        chatMessages.appendChild(newMessage);
+    }
+});
+
+
+        socket.on('removedFromQueue', () => {
+            alert('You have been removed from the queue.');
+            location.reload();
+        });
+
+        socket.on('chatEnded', (message) => {
+            alert(message);
+            document.getElementById('chatArea').style.display = 'none';
+            document.getElementById('queueStatus').innerText = 'Waiting to join...';
+        });
+
+        socket.on('notInChat', (message) => {
+            alert(message);
+        });
+
+        socket.on('alreadyInQueue', () => {
+            alert('You are already in the queue.');
+        });
+    </script>
+</body>
+</html>

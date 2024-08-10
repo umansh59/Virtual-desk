@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Virtual Desk</title>
+</head>
+<body>
+    <h1>Admin Panel</h1>
+    <button id="nextUserBtn">Request Next User</button>
+    <input type="text" id="userIdInput" placeholder="Enter User ID to Remove">
+    <button id="removeUserBtn">Remove User</button>
+
+    <h2>Current Queue</h2>
+    <ul id="queueList"></ul>
+
+    <div id="chatArea">
+        <h2>Chat with User</h2>
+        <input type="text" id="message" placeholder="Type your message...">
+        <button id="sendMessageBtn">Send</button>
+        <div id="chatMessages"></div>
+
+        <h2>Message History</h2>
+        <div id="messageHistory"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        document.getElementById('nextUserBtn').addEventListener('click', () => {
+            socket.emit('requestNext');
+        });
+
+        document.getElementById('removeUserBtn').addEventListener('click', () => {
+            const userId = document.getElementById('userIdInput').value;
+            socket.emit('removeFromQueue', userId);
+        });
+
+        document.getElementById('sendMessageBtn').addEventListener('click', () => {
+            const message = document.getElementById('message').value;
+            socket.emit('adminMessage', message);
+            document.getElementById('message').value = '';
+            
+            // Update message history
+            const messageHistoryDiv = document.getElementById('messageHistory');
+            const sentMessage = document.createElement('p');
+            sentMessage.textContent = `Admin: ${message}`;
+            messageHistoryDiv.appendChild(sentMessage);
+        });
+
+        socket.on('queueUpdate', (updatedQueue) => {
+            const queueList = document.getElementById('queueList');
+            queueList.innerHTML = '';
+            updatedQueue.forEach((userId, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${index + 1}: ${userId}`;
+                queueList.appendChild(listItem);
+            });
+        });
+
+        socket.on('receiveMessage', (data) => {
+            const chatMessages = document.getElementById('chatMessages');
+            const newMessage = document.createElement('p');
+            newMessage.textContent = `${data.sender}: ${data.message}`;
+            chatMessages.appendChild(newMessage);
+
+            // Update message history
+            const messageHistoryDiv = document.getElementById('messageHistory');
+            const receivedMessage = document.createElement('p');
+            receivedMessage.textContent = `${data.sender}: ${data.message}`;
+            messageHistoryDiv.appendChild(receivedMessage);
+        });
+
+        socket.on('messageHistory', (history) => {
+            const messageHistoryDiv = document.getElementById('messageHistory');
+            messageHistoryDiv.innerHTML = ''; // Clear previous history
+            history.forEach(msg => {
+                const historyItem = document.createElement('p');
+                historyItem.textContent = `${msg.sender}: ${msg.message}`;
+                messageHistoryDiv.appendChild(historyItem);
+            });
+        });
+    </script>
+</body>
+</html>
