@@ -10,6 +10,7 @@ const io = new Server(server);
 let queue = [];
 let currentChatUser = null; // Variable to store the user currently chatting with admin
 let messages = {}; // Object to store message history for each user
+app.use(cors())
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
