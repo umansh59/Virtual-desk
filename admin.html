@@ -4,6 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Virtual Desk</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #007bff;
+        }
+
+        #nextUserBtn, #removeUserBtn, #sendMessageBtn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        #nextUserBtn:hover, #removeUserBtn:hover, #sendMessageBtn:hover {
+            background-color: #0056b3;
+        }
+
+        #userIdInput {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px;
+        }
+
+        #queueList {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #queueList li {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin: 5px 0;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        #chatArea {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        #message {
+            width: calc(100% - 90px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        #chatMessages, #messageHistory {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        p {
+            margin: 0 0 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Admin Panel</h1>
@@ -29,6 +107,8 @@
         const socket = io();
         
         document.getElementById('nextUserBtn').addEventListener('click', () => {
+            const messageHistoryDiv = document.getElementById('messageHistory');
+            messageHistoryDiv.innerHTML = '';
             socket.emit('requestNext');
         });
 
@@ -50,27 +130,28 @@
         });
 
         socket.on('queueUpdate', (updatedQueue) => {
-            const queueList = document.getElementById('queueList');
-            queueList.innerHTML = '';
-            updatedQueue.forEach((userId, index) => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `${index + 1}: ${userId}`;
-                queueList.appendChild(listItem);
-            });
-        });
+    const queueList = document.getElementById('queueList');
+    queueList.innerHTML = '';
+    updatedQueue.forEach((userId, index) => {
+        const listItem = document.createElement('li');
+        listItem.textContent = `${index + 1}: ${userId}`;
+        queueList.appendChild(listItem);
+    });
+});
 
         socket.on('receiveMessage', (data) => {
-            const chatMessages = document.getElementById('chatMessages');
-            const newMessage = document.createElement('p');
-            newMessage.textContent = `${data.sender}: ${data.message}`;
-            chatMessages.appendChild(newMessage);
+    const chatMessages = document.getElementById('chatMessages');
+    // const newMessage = document.createElement('p');
+    // newMessage.textContent = `${data.sender}: ${data.message}`;
+    // chatMessages.appendChild(newMessage);
 
-            // Update message history
-            const messageHistoryDiv = document.getElementById('messageHistory');
-            const receivedMessage = document.createElement('p');
-            receivedMessage.textContent = `${data.sender}: ${data.message}`;
-            messageHistoryDiv.appendChild(receivedMessage);
-        });
+    // Update message history immediately
+    const messageHistoryDiv = document.getElementById('messageHistory');
+    const historyMessage = document.createElement('p');
+    historyMessage.textContent = `${data.sender}: ${data.message}`;
+    messageHistoryDiv.appendChild(historyMessage);
+});
+
 
         socket.on('messageHistory', (history) => {
             const messageHistoryDiv = document.getElementById('messageHistory');
@@ -80,6 +161,14 @@
                 historyItem.textContent = `${msg.sender}: ${msg.message}`;
                 messageHistoryDiv.appendChild(historyItem);
             });
+        });
+
+        // Listen for updates to the message history when the user sends a message
+        socket.on('updateMessageHistory', (data) => {
+            const messageHistoryDiv = document.getElementById('messageHistory');
+            const newMessage = document.createElement('p');
+            newMessage.textContent = `${data.sender}: ${data.message}`;
+            messageHistoryDiv.appendChild(newMessage);
         });
     </script>
 </body>

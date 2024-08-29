@@ -3,6 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #007bff;
+        }
+
+        #queueStatus {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+
+        #chatArea {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        #message {
+            width: calc(100% - 90px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        #sendMessageBtn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            
+        }
+        #joinQueueBtn{
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: rgb(236, 41, 41);
+            color: #fff;
+            cursor: pointer;
+            text-align: center;
+            align-items: center;
+            margin-left: 45%;
+            
+        }
+
+        #sendMessageBtn:hover {
+            background-color: #0056b3;
+        }
+
+        #chatMessages {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        p {
+            margin: 0 0 10px;
+        }
+    </style>
+
     <title>Virtual Desk</title>
 </head>
 <body>
@@ -24,15 +102,32 @@
             socket.emit('joinQueue');
         });
 
+        
+        
         document.getElementById('sendMessageBtn').addEventListener('click', () => {
-            const message = document.getElementById('message').value;
-            socket.emit('userMessage', message);
-            document.getElementById('message').value = '';
-        });
+    const message = document.getElementById('message').value;
+
+    if (message.trim() !== '') {  // Check if the message is not empty
+        socket.emit('userMessage', message);
+        document.getElementById('message').value = '';
+
+        // Update message history on the client-side immediately
+        const messageHistoryDiv = document.getElementById('messageHistory');
+        const sentMessage = document.createElement('p');
+        sentMessage.textContent = `User: ${message}`;
+        messageHistoryDiv.appendChild(sentMessage);
+    }
+});
+
+
 
         socket.on('queuePosition', (position) => {
             document.getElementById('queueStatus').innerText = `You are in position ${position} in the queue.`;
         });
+        socket.on('queueUpdate', (updatedQueue) => {
+    document.getElementById('queueStatus').innerText = `You are in position ${updatedQueue.indexOf(socket.id) + 1} in the queue.`;
+});
+
 
         socket.on('startChat', () => {
             document.getElementById('queueStatus').innerText = 'It’s your turn!';

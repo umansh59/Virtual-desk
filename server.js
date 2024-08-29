@@ -4,7 +4,6 @@ const { Server } = require('socket.io');
 const path = require('path');
 const cors = require('cors');
 
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -38,9 +37,10 @@ io.on('connection', (socket) => {
             }
             currentChatUser = queue.shift();
             io.to(currentChatUser).emit('startChat');
-            io.emit('queueUpdate', queue);
-            console.log(`User ${currentChatUser} is now chatting with admin.`);
+            io.emit('queueUpdate', queue); // Broadcast updated queue to all
 
+            console.log(`User ${currentChatUser} is now chatting with admin.`);
+    
             // Send the message history to the admin for the current user
             if (messages[currentChatUser]) {
                 io.to(socket.id).emit('messageHistory', messages[currentChatUser]);
@@ -63,27 +63,29 @@ io.on('connection', (socket) => {
     });
 
     // User sends a message to the admin
-    socket.on('userMessage', (message) => {
-        if (currentChatUser === socket.id) {
-            // Send the message only to the user, not to others
-            io.to(socket.id).emit('receiveMessage', { sender: `User ${socket.id}`, message });
-            console.log(`User ${socket.id} to Admin: ${message}`);
+    // User sends a message to the admin
+socket.on('userMessage', (message) => {
+    if (currentChatUser === socket.id) {
+        // Send the message to the admin
+        io.emit('receiveMessage', { sender: `User ${socket.id}`, message });
+        console.log(`User ${socket.id} to Admin: ${message}`);
 
-            // Save the message in history only for the admin's visibility
-            if (!messages[socket.id]) {
-                messages[socket.id] = [];
-            }
-            messages[socket.id].push({ sender: `User ${socket.id}`, message });
-        } else {
-            socket.emit('notInChat', 'You are not currently chatting with the admin. Please rejoin the queue.');
+        // Save the message in history only for the admin's visibility
+        if (!messages[socket.id]) {
+            messages[socket.id] = [];
         }
-    });
+        messages[socket.id].push({ sender: `User ${socket.id}`, message });
+    } else {
+        socket.emit('notInChat', 'You are not currently chatting with the admin. Please rejoin the queue.');
+    }
+});
+
 
     // Admin forcibly removes a user from the queue
     socket.on('removeFromQueue', (userId) => {
         queue = queue.filter(id => id !== userId);
         io.to(userId).emit('removedFromQueue');
-        io.emit('queueUpdate', queue);
+        io.emit('queueUpdate', queue); // Broadcast updated queue to all
         console.log(`User ${userId} was removed from the queue by admin.`);
     });
 
